@@ -1,0 +1,57 @@
+<template>
+  <v-container fluid>
+    <v-row class="ProductLineHeader"><common-label :item="productionLineTitle" /></v-row>
+    <v-row
+      ><common-table :item-table="TABLE_PROPERTIES" :planned-units="incrementedUnits"></common-table
+    ></v-row>
+  </v-container>
+</template>
+
+<script>
+import { PRODUCTION_LINE_LABEL } from '@/common/recipe/rLabels'
+import { PROUDUCT_LINE_TABLE } from '@/common/recipe/rTables'
+import CommonLabel from '@/components/common/CommonLabel.vue'
+import CommonTable from '@/components/common/CommonTable.vue'
+
+export default {
+  name: 'ProcessLine',
+  components: {
+    CommonLabel,
+    CommonTable,
+  },
+  /**
+   * @description
+   * Recieves data from different components
+   * @number data:
+   * - incrementedUnits {int} - incremented planned number of units
+   */
+  props: {
+    incrementedUnits: {
+      type: Number,
+      default: 0,
+    },
+  },
+  data() {
+    return {
+      TABLE_PROPERTIES: { ...PROUDUCT_LINE_TABLE },
+      productionLineTitle: PRODUCTION_LINE_LABEL,
+    }
+  },
+  watch: {
+    incrementedUnits: {
+      deep: true,
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          return newVal
+        }
+      },
+    },
+  },
+}
+</script>
+<style scoped>
+.ProductLineHeader {
+  margin-bottom: 1rem;
+}
+</style>
