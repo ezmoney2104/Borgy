@@ -1,0 +1,316 @@
+<template>
+  <v-table class="custom-table">
+    <thead>
+      <tr>
+        <th
+          v-show="itemTable.TABLE_HEADER.length != 0"
+          v-for="(column, columnIndex) in itemTable.TABLE_HEADER"
+          :key="columnIndex"
+          v-bind="column.directives"
+          id="custom-header"
+        >
+          <common-label :item="column" class="text-h5 font-weight-bold"></common-label>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td
+          v-show="itemTable.TABLE_ROW.length != 0"
+          v-for="(column, columnIndex) in itemTable.TABLE_ROW"
+          :key="columnIndex"
+          v-bind="column.directives"
+          id="custom-row"
+        >
+          <common-label
+            :item="{
+              ...column,
+              display: {
+                label:
+                  columnIndex === 0 && plannedUnits ? `${plannedUnits} 台` : column.display.label,
+              },
+            }"
+            class="text-subtitle-1 font-weight-rgular"
+          ></common-label>
+        </td>
+      </tr>
+    </tbody>
+  </v-table>
+</template>
+
+<script>
+import CommonLabel from './CommonLabel.vue'
+
+export default {
+  name: 'CommonTable',
+  components: { CommonLabel },
+  /**
+   * @description
+   * Receives data from different component
+   * @object data:
+   * - itemTable {Object} - table properties
+   * @number data:
+   * - plannedUnits {int} - incremented planned number of units
+   */
+  props: {
+    itemTable: {
+      type: Object,
+      required: true,
+    },
+    plannedUnits: {
+      type: Number,
+      default: 0,
+    },
+  },
+}
+</script>
+
+<style scoped>
+.custom-table th {
+  border: 1px solid rgb(204, 204, 204);
+  background-color: #2e2e2e;
+  color: #ffffff;
+  width: 30rem;
+}
+
+.custom-table td {
+  border: 1px solid rgb(204, 204, 204);
+  background-color: #3a3a3a;
+  color: #ffffff;
+}
+
+#custom-header {
+  border-color: rgb(204, 204, 204);
+  height: 2.6rem;
+  text-align: center;
+  font-weight: bolder;
+}
+
+#custom-row {
+  border-color: rgb(204, 204, 204);
+  height: 2.5rem;
+  text-align: center;
+  font-weight: bolder;
+}
+</style>
+
+
+///
+
+
+const OPERATION_INFORMATION_TABLE = {
+  TABLE_HEADER: [
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '稼働状況',
+      },
+      directives: {
+        style: {
+          fontWeight: 'bold',
+          width: '14rem',
+          backgroundColor: '#333333',
+          borderColor: 'white',
+          textAlign: 'center',
+          color: 'white',
+        },
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '',
+      },
+      directives: {
+        style: {
+          fontWeight: 'bold',
+          width: '9rem',
+          borderColor: 'white',
+          textAlign: 'center',
+        },
+      },
+    },
+  ],
+  TH_DIRECTIVES: {
+    class: 'custom-table',
+  },
+
+  TABLE_ROW: [],
+}
+
+const PROUDUCT_LINE_TABLE = {
+  TABLE_HEADER: [
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '計画台数(累計)',
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '生産台数(累計)',
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '稼働率',
+      },
+    },
+  ],
+  TH_DIRECTIVES: {
+    class: 'custom-table',
+  },
+  TABLE_ROW: [
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '-',
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '-',
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '-',
+      },
+    },
+  ],
+  TR_DIRECTIVES: {
+    class: 'custom-table',
+  },
+}
+
+export { OPERATION_INFORMATION_TABLE, PROUDUCT_LINE_TABLE }
+
+
+
+
+////////////////////////
+
+
+<template>
+  <v-container fluid>
+    <v-row>
+      <v-col><ProductionLine :incremented-units="incremented_units" /></v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<script>
+import ProductionLine from '@/components/pages/ProcessInformationScreen/ProductionLine.vue'
+import { FetchAPI } from '@/utility/apiRequest'
+
+export default {
+  name: 'ProcessInformationScreen',
+  components: {
+    ProductionLine,
+  },
+  data() {
+    return {
+      reference_CT: 0,
+      operation_information: [],
+      incremented_units: 0,
+      incrementInterval: null,
+    }
+  },
+  async mounted() {
+    await this.fetchAllOperations()
+    await this.fetchReferenceCT()
+  },
+  methods: {
+    /**
+     * Retrieves all operation information
+     */
+    async fetchAllOperations() {
+      try {
+        const api = new FetchAPI()
+        const response = await api.get('/api/get-all-operations')
+
+        this.operation_information = [...response.data]
+        this.initializeIncrementer()
+      } catch (error) {
+        console.log(error)
+      }
+    },
+
+    /**
+     * Retrieves the reference cycle time
+     */
+    async fetchReferenceCT() {
+      try {
+        const api = new FetchAPI()
+        const response = await api.get('/api/get-ref-cycle-time')
+
+        if (response.success) {
+          let ref_CT = response.data[0].reference_cycle_time * 1000
+          this.reference_CT = ref_CT || 2000
+          this.restartIncrementer()
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    /**
+     * Updates the planned number of units
+     */
+    async updatePlannedUnits() {
+      try {
+        const api = new FetchAPI()
+        const lastOperation = this.operation_information[this.operation_information.length - 1]
+
+        if (lastOperation) {
+          const processId = lastOperation.process_id
+          const payload = { planned_number_units: this.incremented_units }
+
+          await api.put(`/api/update-units/${processId}`, payload)
+        }
+      } catch (error) {
+        console.error('Failed to update planned number units:', error)
+      }
+    },
+    /**
+     * Assign the value of global variable incremented_units and initialize the increment function
+     */
+    initializeIncrementer() {
+      if (this.operation_information.length > 0) {
+        const lastItem = this.operation_information[this.operation_information.length - 1]
+        this.incremented_units = lastItem.planned_number_units || 0
+
+        this.startIncrementer()
+      }
+    },
+    /**
+     * Starts incrementing the planned units
+     */
+    startIncrementer() {
+      this.clearIncrementer()
+      this.incrementInterval = setInterval(async () => {
+        this.incremented_units += 1
+
+        await this.updatePlannedUnits()
+      }, this.reference_CT)
+    },
+    /**
+     * Restart the startIncrementer()
+     */
+    restartIncrementer() {
+      this.startIncrementer()
+    },
+    /**
+     * Resets the interval value
+     */
+    clearIncrementer() {
+      if (this.incrementInterval) {
+        clearInterval(this.incrementInterval)
+      }
+    },
+  },
+}
+</script>
