@@ -1,0 +1,193 @@
+import { shallowMount } from '@vue/test-utils'
+import ProcessInformationScreen from '@/components/pages/ProcessInformationScreen.vue'
+import FetchAPI from '@/utility/apiRequest'
+import 'jest-canvas-mock'
+
+jest.mock('@/utility/apiRequest', () => {
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn(() => Promise.resolve({ success: true, data: [] })),
+    put: jest.fn(() => Promise.resolve({ success: true, message_content: 'Updated successfully' })),
+  }))
+})
+
+jest.spyOn(console, 'error').mockImplementation(() => {
+  return
+})
+
+describe('Testing ProcessInformationScreen.vue', () => {
+  const wrapper = shallowMount(ProcessInformationScreen, {
+    global: {
+      components: {
+        VContainer: 'v-container',
+        VCol: 'v-col',
+        VRow: 'v-row',
+      },
+    },
+    data() {
+      return {
+        reference_CT: 0,
+        operation_information: [],
+        incremented_units: 0,
+        incrementInterval: null,
+      }
+    },
+  })
+  window.console.log = jest.fn()
+
+  it('should initialize data correctly', () => {
+    expect(wrapper.vm.reference_CT).toBe(0)
+    expect(wrapper.vm.operation_information).toEqual([])
+    expect(wrapper.vm.incremented_units).toBe(0)
+    expect(wrapper.vm.incrementInterval).toBeNull()
+  })
+
+  it('starts the incrementer correctly', () => {
+    jest.useFakeTimers()
+    const mockOperation = { planned_number_units: 10 }
+    wrapper.setData({ operation_information: [mockOperation], reference_CT: 1000 })
+    wrapper.vm.startIncrementer()
+    jest.advanceTimersByTime(1000)
+    expect(wrapper.vm.incremented_units).toBe(1)
+    jest.clearAllTimers()
+  })
+
+  it('initializes incrementer correctly when there are operations', () => {
+    const mockOperation = { planned_number_units: 10 }
+    wrapper.setData({ operation_information: [mockOperation] })
+    wrapper.vm.initializeIncrementer()
+    expect(wrapper.vm.incremented_units).toBe(mockOperation.planned_number_units)
+  })
+
+  it('initializes incrementer correctly when there are no operations', () => {
+    const mockOperation = { planned_number_units: 0 }
+    wrapper.setData({ operation_information: [mockOperation] })
+    wrapper.vm.initializeIncrementer()
+    expect(wrapper.vm.incremented_units).toBe(0)
+  })
+
+  it('restarts the incrementer', () => {
+    const startIncrementerSpy = jest.spyOn(wrapper.vm, 'startIncrementer')
+    wrapper.vm.restartIncrementer()
+    expect(startIncrementerSpy).toHaveBeenCalled()
+  })
+})
+--------------------
+<template>
+  <v-container fluid>
+    <v-row>
+      <v-col><ProductionLine :incremented-units="incremented_units" /></v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<script>
+import ProductionLine from '@/components/pages/ProcessInformationScreen/ProductionLine.vue'
+import { FetchAPI } from '@/utility/apiRequest'
+
+export default {
+  name: 'ProcessInformationScreen',
+  components: {
+    ProductionLine,
+  },
+  data() {
+    return {
+      reference_CT: 0,
+      operation_information: [],
+      incremented_units: 0,
+      incrementInterval: null,
+    }
+  },
+  async mounted() {
+    await this.fetchAllOperations()
+    await this.fetchReferenceCT()
+  },
+  methods: {
+    /**
+     * Retrieves all operation information
+     */
+    async fetchAllOperations() {
+      try {
+        const api = new FetchAPI()
+        const response = await api.get('/api/get-all-operations')
+
+        this.operation_information = [...response.data]
+        this.initializeIncrementer()
+      } catch (error) {
+        console.log(error)
+      }
+    },
+
+    /**
+     * Retrieves the reference cycle time
+     */
+    async fetchReferenceCT() {
+      try {
+        const api = new FetchAPI()
+        const response = await api.get('/api/get-ref-cycle-time')
+
+        if (response.success) {
+          let ref_CT = response.data[0].reference_cycle_time * 1000
+          this.reference_CT = ref_CT || 2000
+          this.restartIncrementer()
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    /**
+     * Updates the planned number of units
+     */
+    async updatePlannedUnits() {
+      try {
+        const api = new FetchAPI()
+        const lastOperation = this.operation_information[this.operation_information.length - 1]
+
+        if (lastOperation) {
+          const processId = lastOperation.process_id
+          const payload = { planned_number_units: this.incremented_units }
+
+          await api.put(`/api/update-units/${processId}`, payload)
+        }
+      } catch (error) {
+        console.error('Failed to update planned number units:', error)
+      }
+    },
+    /**
+     * Assign the value of global variable incremented_units and initialize the increment function
+     */
+    initializeIncrementer() {
+      if (this.operation_information.length > 0) {
+        const lastItem = this.operation_information[this.operation_information.length - 1]
+        this.incremented_units = lastItem.planned_number_units || 0
+
+        this.startIncrementer()
+      }
+    },
+    /**
+     * Starts incrementing the planned units
+     */
+    startIncrementer() {
+      this.clearIncrementer()
+      this.incrementInterval = setInterval(async () => {
+        this.incremented_units += 1
+
+        await this.updatePlannedUnits()
+      }, this.reference_CT)
+    },
+    /**
+     * Restart the startIncrementer()
+     */
+    restartIncrementer() {
+      this.startIncrementer()
+    },
+    /**
+     * Resets the interval value
+     */
+    clearIncrementer() {
+      if (this.incrementInterval) {
+        clearInterval(this.incrementInterval)
+      }
+    },
+  },
+}
+</script>
