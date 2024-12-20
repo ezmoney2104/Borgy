@@ -1,0 +1,353 @@
+// CommonTable.vue
+
+<template>
+  <v-table class="custom-table">
+    <thead>
+      <tr>
+        <th
+          v-show="itemTable.TABLE_HEADER.length != 0"
+          v-for="(column, columnIndex) in itemTable.TABLE_HEADER"
+          :key="columnIndex"
+          v-bind="column.directives"
+          id="custom-header"
+        >
+          <common-label :item="column" class="text-h5 font-weight-bold"></common-label>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td
+          v-show="itemTable.TABLE_ROW.length != 0"
+          v-for="(column, columnIndex) in itemTable.TABLE_ROW"
+          :key="columnIndex"
+          v-bind="column.directives"
+          id="custom-row"
+        >
+          <common-label
+            :item="{
+              ...column,
+              columnIndex: columnIndex,
+              display: {
+                label: displayColumnLabel(column.display.label, columnIndex),
+              },
+            }"
+          ></common-label>
+        </td>
+      </tr>
+    </tbody>
+
+    {{ console.log(firstColumn) }}
+  </v-table>
+</template>
+
+<script>
+import CommonLabel from './CommonLabel.vue'
+
+export default {
+  name: 'CommonTable',
+  components: { CommonLabel },
+  /**
+   * @description
+   * Receives data from different component
+   * @object data:
+   * - itemTable {Object} - table properties
+   * @number data:
+   * - plannedUnits {int} - incremented planned number of units
+   * @number data:
+   * - nonDefectiveProducts {int} - number of non-defective product of the last process
+   */
+  props: {
+    itemTable: {
+      type: Object,
+      required: true,
+    },
+    firstColumn: {
+      type: Object,
+    },
+    secondColumn: {
+      type: Object,
+    },
+    thirdColumn: {
+      type: Object,
+    },
+  },
+  methods: {
+    /**
+     * Generates the column labels
+     * @param {string} label - column value
+     * @param {int} columnIndex - column index
+     * @returns {string} column label
+     */
+    displayColumnLabel(label, columnIndex) {
+      switch (columnIndex) {
+        case 0:
+          if (this.firstColumn && (this.firstColumn.value <= 0 || this.firstColumn.value == '')) {
+            return `${label}`
+          } else if (
+            this.firstColumn &&
+            (this.firstColumn.value !== 0 || this.firstColumn.value !== '')
+          ) {
+            return `${this.firstColumn.value} ${this.firstColumn.symbol}`
+          } else {
+            return `${label}`
+          }
+
+        // if (this.firstColumn && (this.firstColumn.value !== 0 || this.firstColumn.value !== '')) {
+        //   return `${this.firstColumn.value} ${this.firstColumn.symbol}`
+        // } else if (
+        //   this.firstColumn &&
+        //   (this.firstColumn.value == 0 || this.firstColumn.value == '')
+        // ) {
+        //   return `${label}`
+        // } else {
+        //   return `${label}`
+        // }
+
+        // if (
+        //   (this.firstColumn && this.firstColumn.value !== 0) ||
+        //   (this.firstColumn && this.firstColumn.value !== '')
+        // ) {
+        //   return `${this.firstColumn.value} ${this.firstColumn.symbol}`
+        // } else {
+        //   return `${label}`
+        // }
+        // return this.firstColumn && (this.firstColumn.value !== 0 || this.firstColumn.value !== '')
+        //   ? `${this.firstColumn.value} ${this.firstColumn.symbol}`
+        //   : `${label}`
+        case 1:
+          if (
+            this.secondColumn &&
+            (this.secondColumn.value <= 0 || this.secondColumn.value == '')
+          ) {
+            return `${label}`
+          } else if (
+            this.secondColumn &&
+            (this.secondColumn.value !== 0 || this.secondColumn.value !== '')
+          ) {
+            return `${this.secondColumn.value} ${this.secondColumn.symbol}`
+          } else {
+            return `${label}`
+          }
+        // if (
+        //   this.secondColumn &&
+        //   (this.secondColumn.value !== '' || this.secondColumn.value !== 0)
+        // ) {
+        //   return `${this.secondColumn.value} ${this.secondColumn.symbol}`
+        // } else {
+        //   return `${label}`
+        // }
+        // return this.secondColumn && this.secondColumn !== 0
+        //   ? `${this.secondColumn.value} ${this.secondColumn.symbol}`
+        //   : `${label}`
+        case 2:
+          if (this.thirdColumn && (this.thirdColumn.value <= 0 || this.thirdColumn.value == '')) {
+            return `${label}`
+          } else if (
+            this.thirdColumn &&
+            (this.thirdColumn.value !== 0 || this.thirdColumn.value !== '')
+          ) {
+            return `${this.thirdColumn.value} ${this.thirdColumn.symbol}`
+          } else {
+            return `${label}`
+          }
+        default:
+          return `${label}`
+      }
+    },
+  },
+}
+</script>
+
+<style scoped>
+.custom-table th {
+  border: 1px solid rgb(204, 204, 204);
+  background-color: #2e2e2e;
+  color: #ffffff;
+  width: 30rem;
+}
+
+.custom-table td {
+  border: 1px solid rgb(204, 204, 204);
+  background-color: #3a3a3a;
+  color: #ffffff;
+}
+
+#custom-header {
+  border-color: rgb(204, 204, 204);
+  height: 2.6rem;
+  text-align: center;
+  font-weight: bolder;
+}
+
+#custom-row {
+  border-color: rgb(204, 204, 204);
+  height: 2.5rem;
+  text-align: center;
+  font-weight: bolder;
+}
+</style>
+
+
+// rTables.js
+
+const OPERATION_INFORMATION_TABLE = {
+  TABLE_HEADER: [
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '稼働状況',
+      },
+      directives: {
+        style: {
+          fontWeight: 'bold',
+          width: '14rem',
+          backgroundColor: '#333333',
+          borderColor: 'white',
+          textAlign: 'center',
+          color: 'white',
+        },
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '',
+      },
+      directives: {
+        style: {
+          fontWeight: 'bold',
+          width: '9rem',
+          borderColor: 'white',
+          textAlign: 'center',
+        },
+      },
+    },
+  ],
+  TH_DIRECTIVES: {
+    class: 'custom-table',
+  },
+
+  TABLE_ROW: [],
+}
+
+const PROUDUCT_LINE_TABLE = {
+  TABLE_HEADER: [
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '計画台数(累計)',
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '生産台数(累計)',
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '稼働率',
+      },
+    },
+  ],
+  TH_DIRECTIVES: {
+    class: 'custom-table',
+  },
+  TABLE_ROW: [
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '-',
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '-',
+      },
+    },
+    {
+      COMPONENT_NAME: 'CommonLabel',
+      display: {
+        label: '-',
+      },
+    },
+  ],
+  TR_DIRECTIVES: {
+    class: 'custom-table',
+  },
+}
+
+export { OPERATION_INFORMATION_TABLE, PROUDUCT_LINE_TABLE }
+
+
+// CommonLabel.vue
+
+<template>
+  <label v-bind="item.directives">{{ item.display.label }}</label>
+</template>
+
+<script>
+export default {
+  name: 'CommonLabel',
+  /**
+   * @description
+   * Receives object of data
+   * * @object directives:
+   * - directives {Object} - includes attributes of the component
+   * - label {String} - text label of the component
+   */
+  props: {
+    item: {
+      type: Object,
+      required: true,
+    },
+  },
+}
+</script>
+
+
+// rLabels.js
+
+const NAVBAR_TITLE_LABEL = {
+  componentName: 'CommonLabel',
+  data: {
+    saveAs: 'appTitle',
+  },
+  display: {
+    label: 'GSP3ミリ波1号ライン',
+  },
+  directives: {
+    class: 'fw-bold fs-2 text-h4',
+  },
+}
+
+const NAVBAR_DATETIME_LABEL = {
+  componentName: 'CommonLabel',
+  data: {
+    saveAs: 'datetime',
+  },
+  display: {
+    label: '',
+  },
+  directives: {
+    class: 'fs-2 text-h6',
+  },
+}
+
+const PRODUCTION_LINE_LABEL = {
+  componentName: 'CommonLabel',
+  data: {
+    saveAs: 'productionLineTitle',
+  },
+  display: {
+    label: 'ライン稼働状況',
+  },
+  directives: {
+    class: 'fs-2 text-h4',
+  },
+}
+
+export { NAVBAR_TITLE_LABEL, NAVBAR_DATETIME_LABEL, PRODUCTION_LINE_LABEL }
