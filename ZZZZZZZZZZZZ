@@ -1,0 +1,8 @@
+getProductNumber() {
+      const operation_information = this.operation_information
+      const defaultFill = '0000'
+      const map = operation_information.map((filObj) =>
+        (defaultFill + filObj.product_number).substr(String(filObj.product_number).length),
+      )
+      this.product_number = map
+    },
