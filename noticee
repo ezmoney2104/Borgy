@@ -1,0 +1,222 @@
+<template>
+  <v-container fluid>
+    <v-row>
+      <common-label :item="ReplenishmentNoticeTitle" />
+    </v-row>
+    <v-row>
+      <v-col class="ma-0 pa-0">
+        <v-list class="replenish-list">
+          <v-list-item v-for="(error, index) in limitedNotice" :key="index" class="error-item">
+            <v-list-item-title
+              class="replenish-list-item"
+              :title="`${index + 1} ${error.process_name}  ${error.error_code}`"
+              v-if="notice.length === 0 || notice.length > 0"
+            >
+              <span class="replenish-number">{{ index + 1 }} </span>
+              <span class="truncate-text">{{ error.process_name }} {{ error.error_code }}</span>
+            </v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<script>
+import CommonLabel from '@/components/common/CommonLabel.vue'
+import { REPLENISHMENT_NOTICE_LABEL } from '@/common/recipe/rLabels'
+
+export default {
+  name: 'ReplenishmentNotice',
+  components: {
+    CommonLabel,
+  },
+  /**
+   * @description
+   * Recieves data from different components
+   * @array data:
+   * - notice {array} - array of objects of the operations
+   */
+  props: {
+    notice: {
+      type: Array,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      ReplenishmentNoticeTitle: REPLENISHMENT_NOTICE_LABEL,
+    }
+  },
+  computed: {
+    /**
+     * Returns the last two return index
+     * @returns {array} the last notice index
+     */
+    limitedNotice() {
+      let noticeArray = this.notice
+
+      if (noticeArray.length > 0) {
+        noticeArray = noticeArray.slice(0, 2)
+      }
+
+      return noticeArray
+    },
+  },
+}
+</script>
+
+<style scoped>
+.replenish-list {
+  background-color: #616161;
+  padding: 0 8px;
+  height: 7.5rem;
+}
+
+.replenish-list-item {
+  padding: 5px 0;
+  height: 45px;
+  display: flex;
+  vertical-align: middle;
+  align-items: center;
+}
+
+.replenish-number {
+  border: 0.125rem solid red;
+  border-radius: 50%;
+  padding: 0.2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-block;
+  width: 3.9ch;
+  aspect-ratio: 1 / 1;
+}
+.error-item {
+  margin: 8px 0;
+  background-color: #ffca37;
+  color: red;
+  font-weight: bolder;
+  padding: 0 10px !important;
+}
+
+.truncate-text {
+  font-weight: 500;
+  font-size: 20px;
+  margin-left: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
+
+
+///
+
+import { shallowMount } from '@vue/test-utils'
+import ReplenishmentNotice from '@/components/pages/ProcessInformationScreen/ReplenishmentNotice.vue'
+
+describe('Testing ReplenishmentNotice.vue', () => {
+  test('test if wrapper exist', () => {
+    const wrapper = shallowMount(ReplenishmentNotice, {
+      global: {
+        components: {
+          VContainer: 'v-container',
+          VRow: 'v-row',
+          VCol: 'v-col',
+          VList: 'v-list',
+          VListItem: 'v-list-item',
+          VListItemTitle: 'v-list-item-title',
+        },
+        props: {
+          notice: [],
+        },
+      },
+    })
+    expect(wrapper.exists()).toBeTruthy()
+  })
+
+  test('should return empty object', () => {
+    const wrapper = shallowMount(ReplenishmentNotice, {
+      global: {
+        components: {
+          VContainer: 'v-container',
+          VRow: 'v-row',
+          VCol: 'v-col',
+          VList: 'v-list',
+          VListItem: 'v-list-item',
+          VListItemTitle: 'v-list-item-title',
+        },
+        props: {
+          notice: [],
+        },
+      },
+    })
+    const limitedNotice = wrapper.vm.limitedNotice()
+
+    expect(limitedNotice).toHaveLength(0)
+    // expect(limitedNotice).toEqual([])
+  })
+
+  test('should return 2 objects from the array', () => {
+    const wrapper = shallowMount(ReplenishmentNotice, {
+      global: {
+        components: {
+          VContainer: 'v-container',
+          VRow: 'v-row',
+          VCol: 'v-col',
+          VList: 'v-list',
+          VListItem: 'v-list-item',
+          VListItemTitle: 'v-list-item-title',
+        },
+        props: {
+          notice: [
+            {
+              process_name: 'sample_name',
+              error_code: 'エラー1-01',
+            },
+            {
+              process_name: 'sample_name2',
+              error_code: 'エラー2-01',
+            },
+            {
+              process_name: 'sample_name3',
+              error_code: 'エラー3-01',
+            },
+          ],
+        },
+      },
+    })
+    // wrapper.setProps({
+    //   notice: [
+    //     {
+    //       process_name: 'sample_name',
+    //       error_code: 'エラー1-01',
+    //     },
+    //     {
+    //       process_name: 'sample_name2',
+    //       error_code: 'エラー2-01',
+    //     },
+    //     {
+    //       process_name: 'sample_name3',
+    //       error_code: 'エラー3-01',
+    //     },
+    //   ],
+    // })
+    const limitedNotice = wrapper.vm.limitedNotice
+
+    let result = [
+      {
+        process_name: 'sample_name',
+        error_code: 'エラー1-01',
+      },
+      {
+        process_name: 'sample_name2',
+        error_code: 'エラー2-01',
+      },
+    ]
+
+    // expect(limitedNotice).toHaveLength(2)
+    expect(limitedNotice).toBe(result)
+  })
+})
