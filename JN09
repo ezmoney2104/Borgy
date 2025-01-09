@@ -1,0 +1,143 @@
+from tests.setup_db_example.base import BaseTestCase
+from src.setup_db_example.database import db
+from src.setup_db_example.models.m_coordinates import CoordinatesDb
+from src.setup_db_example.models.m_operation_information import OperationInformationDb
+from src.setup_db_example.models.m_abnormalities import AbnormalitiesDb
+from src.setup_db_example.models.m_replenishment_notice import ReplenishmentDb
+
+class TestReplenishmentNoticeApi(BaseTestCase):
+    """Class for testing the a_operation_information
+
+    Args:
+        BaseTestCase (class): base module class
+    """
+
+    def test_get_replenishment_notice(self):
+        """Test if the replenishment notice is successfully fetch"""
+        mock_coordinates = CoordinatesDb(
+            x_position=65, y_position=515, width=70, height=40
+        )
+        mock_operation_information = OperationInformationDb(
+            process_name="部品供給機",
+            operation_status=1,
+            planned_number_units=24,
+            non_defective_products = 23,
+            product_number=2,
+            facility_cycle_time=2,
+            coordinates_id=1,
+        )
+        mock_abnormalities = AbnormalitiesDb(error_code='エラー1-01', error_message='異常停止経過時間')
+        mock_replenishment_notice = ReplenishmentDb(setup_date_time='2025-01-07 10:23:54',process_id=1,abnormalities_id=1)
+        db.session.add(mock_coordinates)
+        db.session.add(mock_operation_information)
+        db.session.add(mock_abnormalities)
+        db.session.add(mock_replenishment_notice)
+        db.session.commit()
+        get_response = self.client.get("/api/get-replenishment-notice")
+
+        data = get_response.get_json()
+        assert data["message_response"] == "REPLENISHMENT NOTICE FETCHED SUCCESSFULLY"
+        assert get_response.status_code == 200
+
+    def test_gget_abnormalities(self):
+        """Test if the get_abnormalities is successfully fetch"""
+        mock_coordinates = CoordinatesDb(
+            x_position=65, y_position=515, width=70, height=40
+        )
+        mock_operation_information = OperationInformationDb(
+            process_name="部品供給機",
+            operation_status=1,
+            planned_number_units=24,
+            non_defective_products = 23,
+            product_number=2,
+            facility_cycle_time=2,
+            coordinates_id=1,
+        )
+        mock_abnormalities = AbnormalitiesDb(error_code='エラー1-01', error_message='異常停止経過時間')
+        mock_replenishment_notice = ReplenishmentDb(setup_date_time='2025-01-07 10:23:54',process_id=1,abnormalities_id=1)
+        db.session.add(mock_coordinates)
+        db.session.add(mock_operation_information)
+        db.session.add(mock_abnormalities)
+        db.session.add(mock_replenishment_notice)
+        db.session.commit()
+        get_response = self.client.get("/api/get-abnormalities")
+
+        data = get_response.get_json()
+        assert data["message_response"] == "ABNORMALITIES FETCHED SUCCESSFULLY"
+        assert get_response.status_code == 200
+
+--------------------
+from src.setup_db_example.models.m_replenishment_notice import ReplenishmentDb
+from src.setup_db_example.schemas.s_replenishment_notice import ReplenishmentSchema
+from flask import Blueprint
+
+replenishment_notice_router = Blueprint("a_replenishment_notice", __name__)
+replenishment_notice_schema = ReplenishmentSchema
+
+
+@replenishment_notice_router.route("/api/get-replenishment-notice", methods=["GET"])
+def get_replenishment_notice():
+    """Fetch replenishment notice
+
+    Returns:
+        dict: return the api response
+    """
+
+    query = (
+        ReplenishmentDb.query.order_by(ReplenishmentDb.setup_date_time.asc())
+        .limit(2)
+        .all()
+    )
+
+    replenishment_notice_data = replenishment_notice_schema(many=True).dump(query)
+
+    filtered_data = [
+        {
+            "process_name": item["operation_details"]["process_name"],
+            "error_code": (item["abnormalities_content"]["error_code"]),
+        }
+        for item in replenishment_notice_data
+    ]
+
+    return {
+        "success": True,
+        "message_response": "REPLENISHMENT NOTICE FETCHED SUCCESSFULLY",
+        "message_content": "REPLENISHMENT NOTICE fetched successfully",
+        "data": filtered_data,
+    }, 200
+
+
+@replenishment_notice_router.route("/api/get-abnormalities", methods=["GET"])
+def get_abnormalities():
+    """Fetch abnormalities
+
+    Returns:
+        dict: return the api response
+    """
+
+    query = (
+        ReplenishmentDb.query.order_by(ReplenishmentDb.setup_date_time.asc())
+        .limit(14)
+        .all()
+    )
+
+    abnormalities = replenishment_notice_schema(many=True).dump(query)
+    abnormalities_data = []
+    for item in abnormalities:
+
+        if  item["operation_details"]["operation_status"] == 3:
+            abnormalities_data_dict = {
+                "process_name": item["operation_details"]["process_name"],
+                "error_code": item["abnormalities_content"]["error_code"],
+                "error_message": item["abnormalities_content"]["error_message"],
+            }
+
+            abnormalities_data.append(abnormalities_data_dict)
+
+
+    return {
+        "success": True,
+        "message_response": "ABNORMALITIES FETCHED SUCCESSFULLY",
+        "message_content": "Abnormalities fetched successfully",
+        "data": abnormalities_data,
+    }, 200
