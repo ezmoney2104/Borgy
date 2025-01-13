@@ -1,0 +1,61 @@
+import { shallowMount } from '@vue/test-utils'
+import ErrorInformation from '@/components/pages/ProcessInformationScreen/ErrorInformation.vue'
+
+describe('Testing ErrorInformation.vue', () => {
+  const wrapper = shallowMount(ErrorInformation, {
+    global: {
+      components: {
+        VContainer: 'v-container',
+        VRow: 'v-row',
+        VCol: 'v-col',
+        VList: 'v-list',
+        VListItemTitle: 'v-list-item-title',
+      },
+      props: {
+        abnormalities: [
+          {
+            error_code: 'エラー2-01',
+            error_message: 'Abnormal Elapsed Time',
+            process_name: '低高温検査機_高温検査',
+          },
+          {
+            error_code: 'エラー3-01',
+            error_message: 'Controller Error',
+            process_name: '外観検査',
+          },
+          {
+            error_code: 'エラー1-01',
+            error_message: '異常停止経過時間',
+            process_name: '成型機2',
+          },
+          {
+            error_code: 'エラー4-01',
+            error_message: 'High Control Rating',
+            process_name: '低高温検査機_OTP書き込み',
+          },
+        ],
+      },
+    },
+  })
+
+  test('test if wrapper exist', () => {
+    expect(wrapper.exists()).toBeTruthy()
+  })
+
+  it('resets currentZoomedIndex on mouse leave', () => {
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('sets currentZoomedIndex on mouse enter', () => {
+    window.innerWidth = 500
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('handles window resize correctly', async () => {
+    window.innerWidth = 500
+    window.dispatchEvent(new Event('resize'))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+})
