@@ -1,0 +1,129 @@
+<template>
+  <v-container fluid>
+    <v-row> <common-label :item="ErrorInformationTitle" /> </v-row>
+
+    <v-row>
+      <v-col class="error-screen">
+        <v-list dense>
+          <div
+            v-for="(item, index) in abnormalities"
+            :key="item.id"
+            :class="{ 'zoomed-item': currentZoomedIndex === index }"
+            class="zoom-item"
+            @mouseenter="handleMouseEnter(index)"
+            @mouseleave="handleMouseLeave"
+          >
+            <v-list-item-title
+              ><span>
+                <span class="error-number">{{ index + 1 }} </span> {{ item.process_name }}
+                {{ item.error_code }} {{ item.error_message }}</span
+              ></v-list-item-title
+            >
+          </div>
+        </v-list></v-col
+      ></v-row
+    ></v-container
+  >
+</template>
+
+<script>
+import CommonLabel from '@/components/common/CommonLabel.vue'
+import { ERROR_INFORMATION_LABEL } from '@/common/recipe/rLabels'
+export default {
+  name: 'ErrorInformation',
+  components: {
+    CommonLabel,
+  },
+  /**
+   * @description
+   * Recieves data from different components
+   * @array data:
+   * - abnormalities {array} - array of objects of the operations
+   */
+  props: {
+    abnormalities: {
+      type: Array,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      ErrorInformationTitle: ERROR_INFORMATION_LABEL,
+      currentZoomedIndex: -1,
+    }
+  },
+  methods: {
+    /**
+     *
+     * @param index
+     */
+    handleMouseEnter(index) {
+      if (window.innerWidth < 1200) {
+        this.currentZoomedIndex = index
+      }
+    },
+    /**
+     *
+     */
+    handleMouseLeave() {
+      if (window.innerWidth < 1200) {
+        this.currentZoomedIndex = null
+      }
+    },
+  },
+}
+</script>
+
+<style scoped>
+.v-list {
+  background-color: transparent;
+  padding: 0 8px;
+}
+
+.error-screen {
+  background-color: #616161;
+  padding: 5px;
+  height: 555px;
+  max-height: auto;
+  align-content: center;
+}
+
+.zoom-item {
+  background-color: #b71c1c;
+  margin: 3px 0px;
+  padding: 1px;
+  border-radius: 4px;
+  transition: transform 0.5s ease;
+  width: 100%;
+  color: white;
+}
+
+.zoom-item .v-list-item-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zoomed-item .v-list-item-title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.zoomed-item {
+  background-color: #921616;
+}
+
+.error-number {
+  border: 0.125rem solid #f1f1f1;
+  border-radius: 50%;
+  padding: 0.2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  width: 3.9ch;
+  aspect-ratio: 1 / 1;
+  margin: 2px;
+}
+</style>
