@@ -1,0 +1,7 @@
+async setAmbientTemperatureData() {
+      let tempArray = await this.fetchAmbientTemperature()
+
+      tempArray.map((item) => {
+        this.ambientTemperatureData.push(item.ambient_temperature)
+      })
+    },
